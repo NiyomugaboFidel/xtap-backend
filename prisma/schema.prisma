@@ -2,19 +2,18 @@
 // Learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-  provider        = "prisma-client-js"
-  previewFeatures = ["extendedWhereUnique"]
+  provider = "prisma-client-js"
+  // This feature is no longer needed as a preview feature
+  // previewFeatures = ["extendedWhereUnique"]
 }
 
-
-
 datasource db {
-  provider = "postgresql" // You can change this to mysql, sqlite, sqlserver, mongodb, or cockroachdb
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
 model User {
-  id                  String    @id @default(uuid())
+  id                  String    @id @default(uuid()) @map("_id")
   firstName           String
   lastName            String
   email               String    @unique
@@ -29,7 +28,7 @@ model User {
   passwordResetToken  String?
   passwordResetExpires DateTime?
   createdBy           String?
-  createdUser         User?     @relation("UserCreatedBy", fields: [createdBy], references: [id])
+  createdUser         User?     @relation("UserCreatedBy", fields: [createdBy], references: [id], onDelete: NoAction, onUpdate: NoAction)
   usersCreated        User[]    @relation("UserCreatedBy")
   lastLogin           DateTime?
   dateOfBirth         DateTime?
@@ -67,8 +66,8 @@ model User {
 }
 
 model Student {
-  id              String        @id @default(uuid())
-  studentId       String        @unique @db.VarChar(12) // Format:  YYYYMMDD + sequence number (e.g., S202400001)
+  id              String        @id @default(uuid()) @map("_id")
+  studentId       String        @unique // Format: YYYYMMDD + sequence number (e.g., S202400001)
   cardId          String        @unique @default(uuid())
   isActive        Boolean       @default(true)
   firstName       String
@@ -113,7 +112,7 @@ model Student {
 }
 
 model Course {
-  id          String    @id @default(uuid())
+  id          String    @id @default(uuid()) @map("_id")
   name        String    @unique
   description String?
   students    Student[]
@@ -126,7 +125,7 @@ model Course {
 }
 
 model Class {
-  id          String       @id @default(uuid())
+  id          String       @id @default(uuid()) @map("_id")
   name        String       @unique
   level       String?
   section     String?
@@ -150,13 +149,13 @@ model Class {
 }
 
 model Attendance {
-  id          String           @id @default(uuid())
+  id          String           @id @default(uuid()) @map("_id")
   cardId      String           // Card ID used for tracking
   studentId   String           // Uses the student's unique number
   student     Student          @relation(fields: [studentId], references: [studentId])
   classId     String
   class       Class            @relation(fields: [classId], references: [id])
-  date        DateTime         @default(now()) @db.Date
+  date        DateTime         @default(now())
   status      AttendanceStatus @default(absent)
   tapTime     DateTime?        // Time when card was tapped
   reason      String?          // For absences or late arrivals
@@ -174,7 +173,7 @@ model Attendance {
 }
 
 model GlobalAttendanceConfig {
-  id            String   @id @default(uuid())
+  id            String   @id @default(uuid()) @map("_id")
   openTime      String   @default("05:00:00") // School opens
   lateThreshold String   @default("08:00:00") // After this time students are marked late
   closeTime     String   @default("17:00:00") // School closes
@@ -190,10 +189,9 @@ model GlobalAttendanceConfig {
   @@map("global_attendance_config")
 }
 
-// New model for tracking holidays and special days
 model SchoolCalendar {
-  id           String         @id @default(uuid())
-  date         DateTime       @unique @db.Date
+  id           String         @id @default(uuid()) @map("_id")
+  date         DateTime       @unique
   name         String
   description  String?
   type         CalendarDayType
@@ -202,15 +200,13 @@ model SchoolCalendar {
   createdAt    DateTime       @default(now())
   updatedAt    DateTime       @updatedAt
 
-  @@index([date])
   @@index([type])
   @@map("school_calendar")
 }
 
-// New model for attendance reports
 model AttendanceReport {
-  id           String         @id @default(uuid())
-  reportDate   DateTime       @db.Date
+  id           String         @id @default(uuid()) @map("_id")
+  reportDate   DateTime       
   classId      String?
   reportType   ReportType
   generatedBy  String?
